@@ -1,0 +1,7 @@
+INSERT INTO "public"."CSDB_TrunkOperators" ("id", "OperatorName", "OperatorCode", "ObjClass", "ObjType", "ObjCategory", "CompanyId", "TenantId", "createdAt", "updatedAt", "NumberSetupFee", "NumberRSCRate", "ChannelFee") VALUES (DEFAULT, 'TWILIO', 'TWILIO', null, null, null, 3, 1, '2019-04-29 12:53:46.124000', '2019-04-29 12:53:50.555000', 0, 0, 0)
+
+INSERT INTO "public"."CSDB_Trunks" ("id", "TrunkCode", "TrunkName", "ObjClass", "ObjType", "ObjCategory", "IpUrl", "Enable", "CompanyId", "TenantId", "createdAt", "updatedAt", "ProfileId", "LoadBalancerId", "TranslationId", "TrunkOperatorId", "MaxLimit", "Username", "Password", "Codecs", "Register") VALUES (DEFAULT, 'TwilioTrunk', 'TwilioTrunk', 'DVP', 'TRUNK', 'TRUNK', 'facetone.pstn.twilio.com', null, null, 103, 1, '2019-05-02 12:21:04.111000', '2019-05-02 12:21:19.606000', 1, null, null, null, null, null, null, null, null)
+
+INSERT INTO "public"."CSDB_IPAddresses" ("id", "CompanyId", "TenantId", "MainIp", "IP", "IsAllocated", "createdAt", "updatedAt", "CallServerId") VALUES (DEFAULT, 103, 1, null, 'facetone.pstn.twilio.com', true, '2019-05-02 16:20:42.900000', '2019-05-02 16:20:45.402000', 2)
+
+INSERT INTO "public"."CSDB_TrunkIpAddresses" ("id", "IpAddress", "Mask", "CompanyId", "TenantId", "createdAt", "updatedAt", "TrunkId") VALUES (42, 'facetone.pstn.twilio.com', 32, -1, -1, '2019-05-03 15:13:24.787000', '2019-05-03 15:13:31.758000', 41)
