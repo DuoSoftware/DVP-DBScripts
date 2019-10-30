@@ -11,7 +11,7 @@ begin
     SQL := 'SELECT login."SummaryDate"                                                                                                        as summary_date,
        login."Tenant"::integer                                                                                                    as tenant,
        login."Company"::integer                                                                                                   as company,
-       ''All''::varchar                                                                                                           as bu,
+       ''ALL''::varchar                                                                                                           as bu,
        login.agent::integer                                                                                                       as agent,
        COALESCE(login.max_time, 0)                                                                                                as login_max_time,
        COALESCE(login.total_count, 0)                                                                                             as login_total_count,
