@@ -345,7 +345,7 @@ FROM ((select "SummaryDate"::date,
               sum("TotalCount") as total_count,
               sum("TotalTime")  as total_time,
               avg("TotalCount") as avg_count,
-              avg("TotalTime")  as avg_time
+              (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
 
        from "Dashboard_DailySummaries"
        where "WindowName" = ''LOGIN''
@@ -381,7 +381,7 @@ FROM ((select "SummaryDate"::date,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
              avg("TotalCount") as avg_count,
-             avg("TotalTime")  as avg_time
+             (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
       where "WindowName" = ''INBOUND''
                 and "SummaryDate" >= ''' || from_date || '''
@@ -400,7 +400,7 @@ FROM ((select "SummaryDate"::date,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
              avg("TotalCount") as avg_count,
-             avg("TotalTime")  as avg_time
+             (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
       where "WindowName" = ''OUTBOUND''
                  and "SummaryDate" >= ''' || from_date || '''
@@ -418,7 +418,7 @@ FROM ((select "SummaryDate"::date,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
              avg("TotalCount") as avg_count,
-             avg("TotalTime")  as avg_time
+             (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
       where "WindowName" = ''CONNECTED''
           and "Param2" = ''CALLinbound''
@@ -438,7 +438,7 @@ FROM ((select "SummaryDate"::date,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
              avg("TotalCount") as avg_count,
-             avg("TotalTime")  as avg_time
+             (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
       where "WindowName" = ''CONNECTED''
           and "Param2" = ''CALLoutbound''
@@ -458,7 +458,7 @@ FROM ((select "SummaryDate"::date,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
              avg("TotalCount") as avg_count,
-             avg("TotalTime")  as avg_time
+             (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
       where "WindowName" = ''AGENTHOLD''
           and "Param2" = ''inbound''
@@ -477,7 +477,7 @@ FROM ((select "SummaryDate"::date,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
              avg("TotalCount") as avg_count,
-             avg("TotalTime")  as avg_time
+             (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
       where "WindowName" = ''AGENTHOLD''
           and "Param2" = ''outbound''
@@ -496,7 +496,7 @@ FROM ((select "SummaryDate"::date,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
              avg("TotalCount") as avg_count,
-             avg("TotalTime")  as avg_time
+             (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
       where "WindowName" = ''AFTERWORK''
           and "Param2" = ''AfterWorkCALLinbound''
@@ -515,7 +515,7 @@ FROM ((select "SummaryDate"::date,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
              avg("TotalCount") as avg_count,
-             avg("TotalTime")  as avg_time
+             (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
       where "WindowName" = ''AFTERWORK''
           and "Param2" = ''AfterWorkCALLoutbound''
@@ -534,7 +534,7 @@ FROM ((select "SummaryDate"::date,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
              avg("TotalCount") as avg_count,
-             avg("TotalTime")  as avg_time
+             (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
       where "WindowName" = ''BREAK''
                  and "SummaryDate" >= ''' || from_date || '''
