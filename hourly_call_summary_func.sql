@@ -1,38 +1,25 @@
---Author: Marlon Abeykoon
---Version: 1.0.0v
+--Version: 1.0.1v
 
-create
-	or replace function public.hourly_call_summary(
-		from_date timestamp with time zone,
-		to_date timestamp with time zone,
-		skills character varying,
-		tz character varying,
-		b_unit character varying,
-		company integer,
-		tenant integer
-	) returns table
-		(
-			ivrcount bigint,
-			queuedcount bigint,
-			abandonedcount bigint,
-			abandonedpercent numeric,
-			droppedcount bigint,
-			droppedpercent numeric,
-			holdsec_avg text,
-			ivrconnect_avg text,
-			answersec_avg text,
-			billsec_avg text,
-			answered_count bigint,
-			queuesec_avg text,
-			answeredpercent numeric,
-			abandonedqueue_avg text,
-			answeredqueue_avg text,
-			s_date date,
-			s_hour integer,
-			agentskill character varying,
-			company_id integer,
-			tenant_id integer
-		) language plpgsql as $function$ begin if b_unit is null then return query select
+-- FUNCTION: public.hourly_call_summary(timestamp with time zone, timestamp with time zone, character varying, character varying, character varying, integer, integer)
+
+-- DROP FUNCTION public.hourly_call_summary(timestamp with time zone, timestamp with time zone, character varying, character varying, character varying, integer, integer);
+
+CREATE OR REPLACE FUNCTION public.hourly_call_summary(
+	from_date timestamp with time zone,
+	to_date timestamp with time zone,
+	skills character varying,
+	tz character varying,
+	b_unit character varying,
+	company integer,
+	tenant integer)
+    RETURNS TABLE(ivrcount bigint, queuedcount bigint, abandonedcount bigint, abandonedpercent numeric, droppedcount bigint, droppedpercent numeric, holdsec_avg text, ivrconnect_avg text, answersec_avg text, billsec_avg text, answered_count bigint, queuesec_avg text, answeredpercent numeric, abandonedqueue_avg text, answeredqueue_avg text, s_date date, s_hour integer, agentskill character varying, company_id integer, tenant_id integer)
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE
+    ROWS 1000
+AS $BODY$
+ begin if b_unit is null then return query select
 			a.ivrcount,
 			b.queuedcount,
 			c.abandonedcount,
@@ -666,7 +653,6 @@ create
 			series.s_date,
 			series.s_hour,
 			a."AgentSkill";
-
 
 else return query select
 	a.ivrcount,
@@ -1348,9 +1334,10 @@ order by
 	series.s_hour,
 	a."AgentSkill";
 
-
 end if;
 
+end
+$BODY$;
 
-end $function$
-
+ALTER FUNCTION public.hourly_call_summary(timestamp with time zone, timestamp with time zone, character varying, character varying, character varying, integer, integer)
+    OWNER TO postgres;
