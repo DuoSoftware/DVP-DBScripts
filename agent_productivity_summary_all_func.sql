@@ -194,7 +194,7 @@ begin
                (
                            COALESCE(login.total_time, 0) -
                            (COALESCE(inbound.total_time, 0) +
-                            COALESCE(outbound.total_time, 0) ))) || '' second''
+                            COALESCE(outbound.total_time, 0)) || '' second''
                    )::interval,
                '' HH24:MI:SS ''
            )                                                                                                                      as idle_time_offline,
