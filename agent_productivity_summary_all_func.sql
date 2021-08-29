@@ -521,10 +521,10 @@ FROM ((select "SummaryDate"::date,
              avg("TotalCount") as avg_count,
              (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
       from "Dashboard_DailySummaries"
-      where "WindowName" = ''''DIALED''''
-          and "Param2" = ''''DialedOutbound''''
-                and "SummaryDate" >= '''''' || from_date || ''''''
-           and "SummaryDate" <= '''''' || to_date || ''''''
+      where "WindowName" = ''DIALED''
+          and "Param2" = ''DialedOutbound''
+                and "SummaryDate" >= ''' || from_date || '''
+           and "SummaryDate" <= ''' || to_date || '''
       group by "SummaryDate"::date, "Tenant", "Company") as outbound_dialed_full
      on login."SummaryDate" = outbound_dialed_full."SummaryDate" and login."Tenant" = outbound_dialed_full."Tenant" and
         login."Company" = outbound_dialed_full."Company"
