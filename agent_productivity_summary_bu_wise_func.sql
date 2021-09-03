@@ -1,13 +1,18 @@
-CREATE OR REPLACE FUNCTION public.agent_productivity_summary_bu_wise(
-from_date timestamp with time zone,
-to_date timestamp with time zone)
-returns TABLE(summary_date date, tenant integer, company integer, bu character varying, agent integer, login_max_time integer, login_total_count bigint, login_total_time text, login_time timestamp with time zone, inbound_max_time integer, inbound_total_count bigint, inbound_total_time text, outbound_max_time integer, outbound_total_count bigint, outbound_total_time text, total_call_count bigint, total_call_time bigint, avg_inbound_call_count numeric, avg_outbound_call_count numeric, avg_inbound_call_time numeric, avg_outbound_call_time numeric, inbound_talk_max_time integer, inbound_connected_total_count bigint, inbound_talk_total_time text, outbound_talk_max_time integer, outbound_connected_total_count bigint, outbound_talk_total_time text, connected_total_count bigint, total_talk_total_time bigint, avg_inbound_talk_time text, avg_outbound_talk_time text, avg_inbound_handling_time text, avg_outbound_handling_time text, outbound_dialed_total_count text, outbound_dialed_total_time text, avg_outbound_dialed_time text, inbound_hold_max_time integer, inbound_hold_total_count bigint, inbound_hold_total_time text, outbound_hold_max_time integer, outbound_hold_total_count bigint, outbound_hold_total_time text, total_hold_total_count bigint, total_hold_total_time bigint, avg_inbound_hold_count numeric, avg_outbound_hold_count numeric, avg_inbound_hold_time text, avg_outbound_hold_time text, inbound_acw_max_time integer, inbound_acw_total_count bigint, inbound_acw_total_time text, outbound_acw_max_time integer, outbound_acw_total_count bigint, outbound_acw_total_time text, total_acw_total_count bigint, total_acw_total_time bigint, avg_inbound_acw_count numeric, avg_outbound_acw_count numeric, avg_inbound_acw_time numeric, avg_outbound_acw_time numeric, idle_time_inbound text, idle_time_outbound text, idle_time_offline text, total_break_time text, full_total_login_time text, full_total_inbound_time text, full_total_outbound_time text, full_total_inbound_idle_time text, full_total_outbound_idle_time text, full_total_offline_idle_time text, full_total_inbound_acw_time text, full_total_outbound_acw_time text, full_total_inbound_talk_time text, full_total_outbound_talk_time text, full_total_inbound_hold_time text, full_total_outbound_hold_time text, full_total_inbound_hold_count bigint, full_total_outbound_hold_count bigint, full_total_break_time text, full_total_connected_inbound_calls bigint, full_total_connected_outbound_calls bigint, full_total_inbound_calls bigint, full_total_outbound_calls bigint, full_avg_inbound_handling_time text, full_avg_outbound_handling_time text, full_avg_inbound_talk_time text, full_avg_outbound_talk_time text, full_avg_inbound_hold_time text, full_avg_outbound_hold_time text)
-	language plpgsql
+-- FUNCTION: public.agent_productivity_summary_bu_wise(timestamp with time zone, timestamp with time zone)
 
-	COST 100
-    VOLATILE
+-- DROP FUNCTION public.agent_productivity_summary_bu_wise(timestamp with time zone, timestamp with time zone);
+
+CREATE OR REPLACE FUNCTION public.agent_productivity_summary_bu_wise(
+	from_date timestamp with time zone,
+	to_date timestamp with time zone)
+    RETURNS TABLE(summary_date date, tenant integer, company integer, bu character varying, agent integer, login_max_time integer, login_total_count bigint, login_total_time text, login_time timestamp with time zone, inbound_max_time integer, inbound_total_count bigint, inbound_total_time text, outbound_max_time integer, outbound_total_count bigint, outbound_total_time text, total_call_count bigint, total_call_time bigint, avg_inbound_call_count numeric, avg_outbound_call_count numeric, avg_inbound_call_time numeric, avg_outbound_call_time numeric, inbound_talk_max_time integer, inbound_connected_total_count bigint, inbound_talk_total_time text, outbound_talk_max_time integer, outbound_connected_total_count bigint, outbound_talk_total_time text, connected_total_count bigint, total_talk_total_time bigint, avg_inbound_talk_time text, avg_outbound_talk_time text, avg_inbound_handling_time text, avg_outbound_handling_time text, outbound_dialed_total_count bigint, outbound_dialed_total_time text, avg_outbound_dialed_time text, inbound_hold_max_time integer, inbound_hold_total_count bigint, inbound_hold_total_time text, outbound_hold_max_time integer, outbound_hold_total_count bigint, outbound_hold_total_time text, total_hold_total_count bigint, total_hold_total_time bigint, avg_inbound_hold_count numeric, avg_outbound_hold_count numeric, avg_inbound_hold_time text, avg_outbound_hold_time text, inbound_acw_max_time integer, inbound_acw_total_count bigint, inbound_acw_total_time text, outbound_acw_max_time integer, outbound_acw_total_count bigint, outbound_acw_total_time text, total_acw_total_count bigint, total_acw_total_time bigint, avg_inbound_acw_count numeric, avg_outbound_acw_count numeric, avg_inbound_acw_time numeric, avg_outbound_acw_time numeric, idle_time_inbound text, idle_time_outbound text, idle_time_offline text, total_break_time text, full_total_login_time text, full_total_inbound_time text, full_total_outbound_time text, full_total_inbound_idle_time text, full_total_outbound_idle_time text, full_total_offline_idle_time text, full_total_inbound_acw_time text, full_total_outbound_acw_time text, full_total_inbound_talk_time text, full_total_outbound_talk_time text, full_total_inbound_hold_time text, full_total_outbound_hold_time text, full_total_inbound_hold_count bigint, full_total_outbound_hold_count bigint, full_total_break_time text, full_total_connected_inbound_calls bigint, full_total_connected_outbound_calls bigint, full_total_inbound_calls bigint, full_total_outbound_calls bigint, full_avg_inbound_handling_time text, full_avg_outbound_handling_time text, full_avg_inbound_talk_time text, full_avg_outbound_talk_time text, full_avg_inbound_hold_time text, full_avg_outbound_hold_time text) 
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
     ROWS 1000
-as $BODY$
+AS $BODY$
+
 DECLARE
 
     SQL                   TEXT;
@@ -33,7 +38,6 @@ begin
                     and "createdAt" < ''' || from_date || '''
                     and "ResourceId" = login.agent::integer
                 order by "createdAt" desc limit 1))                                                                               as login_time,
-
        COALESCE(inbound.max_time, 0)                                                                                              as inbound_max_time,
        COALESCE(inbound.total_count, 0)                                                                                           as inbound_total_count,
        TO_CHAR(
@@ -57,7 +61,6 @@ begin
        COALESCE(outbound.avg_count, 0)                                                                                            as avg_outbound_call_count,
        COALESCE(inbound.avg_time, 0)                                                                                              as avg_inbound_call_time,
        COALESCE(outbound.avg_time, 0)                                                                                             as avg_outbound_call_time,
-
        COALESCE(inbound_connected.max_time, 0) -
        COALESCE(inbound_hold.max_time, 0)                                                                                         as inbound_talk_max_time,
        COALESCE(inbound_connected.total_count, 0)                                                                                 as inbound_connected_total_count, -- deduct inbound hold time from inbound talk time to get correct inbound talk time
@@ -93,7 +96,6 @@ begin
 		COALESCE(outbound_connected.total_count, 1) || '' second'' )::interval,
                '' HH24:MI:SS ''
            )                                                                                                                      as avg_outbound_talk_time,
-
        TO_CHAR(
                (
                            (COALESCE(inbound_connected.total_time, 0) + COALESCE(inbound_acw.total_time, 0)) /
@@ -152,7 +154,6 @@ begin
                    )::interval,
                '' HH24:MI:SS ''
            )                                                                                                                      as avg_outbound_hold_time,
-
        COALESCE(inbound_acw.max_time, 0)                                                                                          as inbound_acw_max_time,
        COALESCE(inbound_acw.total_count, 0)                                                                                       as inbound_acw_total_count,
        TO_CHAR(
@@ -177,7 +178,6 @@ begin
        COALESCE(outbound_acw.avg_count, 0)                                                                                        as avg_outbound_acw_count,
        COALESCE(inbound_acw.avg_time, 0)                                                                                          as avg_inbound_acw_time,
        COALESCE(outbound_acw.avg_time, 0)                                                                                         as avg_outbound_acw_time,
-
        TO_CHAR(
                (
                            COALESCE(inbound.total_time, 0) -
@@ -194,7 +194,6 @@ begin
                    )::interval,
                '' HH24:MI:SS ''
            )                                                                                                                      as idle_time_outbound,
-
        TO_CHAR(
                (
                            COALESCE(login.total_time, 0) -
@@ -203,14 +202,12 @@ begin
                    )::interval,
                '' HH24:MI:SS ''
            )                                                                                                                      as idle_time_offline,
-
        TO_CHAR(
                (
                    COALESCE(break.total_time, 0) || '' second''
                    )::interval,
                '' HH24:MI:SS ''
            )                                                                                                                      as total_break_time,
-
        TO_CHAR(
                (
                    CAST(SUM(COALESCE(login.total_time, 0)) over () AS BIGINT) || '' second''
@@ -358,7 +355,6 @@ FROM ((select "SummaryDate"::date,
               sum("TotalTime")  as total_time,
               avg("TotalCount") as avg_count,
               (sum("TotalTime")/COALESCE(NULLIF(sum("TotalCount"),0),1))::numeric  as avg_time
-
        from "Dashboard_DailySummaries"
        where "WindowName" = ''LOGIN''
            and "SummaryDate" >= ''' || from_date || '''
@@ -381,8 +377,6 @@ FROM ((select "SummaryDate"::date,
         login."Company"::integer = resource_login_same_day."CompanyId" and
         login."BusinessUnit" = resource_login_same_day."BusinessUnit" and
         login.agent::integer = resource_login_same_day.agent
-
-
          left outer join
      (select "SummaryDate"::date,
              "Tenant",
@@ -450,10 +444,10 @@ FROM ((select "SummaryDate"::date,
              avg("TotalCount") as avg_count,
              avg("TotalTime")  as avg_time
       from "Dashboard_DailySummaries"
-      where "WindowName" = ''''CONNECTED''''
-          and "Param2" = ''''CALLinbound''''
-                 and "SummaryDate" >= '''''' || from_date || ''''''
-           and "SummaryDate" <= '''''' || to_date || ''''''
+      where "WindowName" = ''CONNECTED''
+          and "Param2" = ''CALLinbound''
+                 and "SummaryDate" >= ''' || from_date || '''
+           and "SummaryDate" <= ''' || to_date || '''
            group by "SummaryDate"::date, "Tenant", "Company", "BusinessUnit") as inbound_connected_full
      on login."SummaryDate" = inbound_connected_full."SummaryDate" and login."Tenant" = inbound_connected_full."Tenant" and
         login."Company" = inbound_connected_full."Company" and  login."BusinessUnit" = inbound_connected_full."BusinessUnit"
@@ -494,11 +488,11 @@ FROM ((select "SummaryDate"::date,
            group by "SummaryDate"::date, "Tenant", "Company", "BusinessUnit") as outbound_connected_full
      on login."SummaryDate" = outbound_connected_full."SummaryDate" and login."Tenant" = outbound_connected_full."Tenant" and
         login."Company" = outbound_connected_full."Company" and  login."BusinessUnit" = outbound_connected_full."BusinessUnit"
-
          left outer join
     (select "SummaryDate"::date,
              "Tenant",
              "Company",
+			 "BusinessUnit",
              "Param1"          as agent,
              max("MaxTime")    as max_time,
              sum("TotalCount") as total_count,
@@ -510,13 +504,14 @@ FROM ((select "SummaryDate"::date,
           and "Param2" = ''DialedOutbound''
                  and "SummaryDate" >= ''' || from_date || '''
            and "SummaryDate" <= ''' || to_date || '''
-           group by "SummaryDate"::date, "Tenant", "Company", "Param1") as outbound_dialed
+           group by "SummaryDate"::date, "Tenant", "Company", "BusinessUnit", "Param1") as outbound_dialed
      on login."SummaryDate" = outbound_dialed."SummaryDate" and login."Tenant" = outbound_dialed."Tenant" and
         login."Company" = outbound_dialed."Company" and  login."BusinessUnit" = outbound_dialed."BusinessUnit" and login.agent = outbound_dialed.agent
          left outer join
      (select "SummaryDate"::date,
              "Tenant",
              "Company",
+			 "BusinessUnit",
              max("MaxTime")    as max_time,
              sum("TotalCount") as total_count,
              sum("TotalTime")  as total_time,
@@ -527,7 +522,7 @@ FROM ((select "SummaryDate"::date,
           and "Param2" = ''DialedOutbound''
                 and "SummaryDate" >= ''' || from_date || '''
            and "SummaryDate" <= ''' || to_date || '''
-      group by "SummaryDate"::date, "Tenant", "Company") as outbound_dialed_full
+      group by "SummaryDate"::date, "Tenant", "Company", "BusinessUnit") as outbound_dialed_full
      on login."SummaryDate" = outbound_dialed_full."SummaryDate" and login."Tenant" = outbound_dialed_full."Tenant" and
         login."Company" = outbound_dialed_full."Company" and  login."BusinessUnit" = outbound_dialed_full."BusinessUnit"
          left outer join
@@ -625,8 +620,6 @@ FROM ((select "SummaryDate"::date,
      on login."SummaryDate" = break."SummaryDate" and login."Tenant" = break."Tenant" and
         login."Company" = break."Company"  and  login."BusinessUnit" = break."BusinessUnit" and login.agent = break.agent
          )
-
-
 order by summary_date, tenant, company, agent;';
     raise notice 'SQL: %', SQL;
     RETURN QUERY EXECUTE SQL;
@@ -634,7 +627,9 @@ EXCEPTION
     WHEN OTHERS THEN
         RAISE;
 end
-$$;
 
-alter function agent_productivity_summary_bu_wise(timestamp with time zone, timestamp with time zone) owner to duo;
+$BODY$;
+
+ALTER FUNCTION public.agent_productivity_summary_bu_wise(timestamp with time zone, timestamp with time zone)
+    OWNER TO duo;
 
