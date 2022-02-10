@@ -92,7 +92,7 @@ begin
                '' HH24:MI:SS ''
            )                                                                                                                      as avg_inbound_talk_time,
        TO_CHAR(
-               ((COALESCE(outbound_connected.total_time, 0) COALESCE(outbound_hold.total_time, 0)) /
+               ((COALESCE(outbound_connected.total_time, 0) - COALESCE(outbound_hold.total_time, 0)) /
 		COALESCE(outbound_connected.total_count, 1) || '' second'' )::interval,
                '' HH24:MI:SS ''
            )                                                                                                                      as avg_outbound_talk_time,
