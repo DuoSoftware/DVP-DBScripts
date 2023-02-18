@@ -345,12 +345,10 @@ begin
                '' HH24:MI:SS ''
            )                                                                                                                      as avg_outbound_dialed_time,
        COALESCE(outbound_dialed.total_count, 0)                                                                                   as outbound_dialed_total_count,
-       COALESCE(resource_logout_same_day.logout_time, (select "createdAt" as logout_time
-                                                     from "DB_RES_ResourceStatusChangeInfos"
-                                                     where "Reason" = ''UnRegister''
-                    and "createdAt" < ''' || from_date || '''
-                    and "ResourceId" = login.agent::integer
-                order by "createdAt" desc limit 1))                                                                               as logout_time
+       COALESCE(resource_logout_same_day.logout_time, COALESCE( 
+	   	CONCAT( 
+			TO_CHAR(login."SummaryDate",''yyyy-mm-dd''), '' '', ''18:29:29.00+00'')
+			)::timestamp with time zone)                                                                               as logout_time
 FROM ((select "SummaryDate"::date,
               "Tenant",
               "Company",
