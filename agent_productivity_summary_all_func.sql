@@ -347,7 +347,7 @@ begin
        COALESCE(outbound_dialed.total_count, 0)                                                                                   as outbound_dialed_total_count,
        COALESCE(resource_logout_same_day.logout_time, COALESCE( 
 	   	CONCAT( 
-			TO_CHAR(login."SummaryDate",''yyyy-mm-dd''), '' '', ''18:29:29.00+00'')
+			TO_CHAR(login."SummaryDate",''yyyy-mm-dd''), '' '', ''18:29:59.00+00'')
 			)::timestamp with time zone)                                                                               as logout_time
 FROM ((select "SummaryDate"::date,
               "Tenant",
