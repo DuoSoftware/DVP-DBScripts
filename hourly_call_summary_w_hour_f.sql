@@ -1,8 +1,8 @@
---Version: 1.0.1v
+--Version: 1.0.2v
 
 -- FUNCTION: public.hourly_call_summary_w_hour_f(timestamp with time zone, timestamp with time zone, integer, integer, character varying, character varying, character varying, integer, integer)
 
--- DROP FUNCTION public.hourly_call_summary_w_hour_f(timestamp with time zone, timestamp with time zone, integer, integer, character varying, character varying, character varying, integer, integer);
+--DROP FUNCTION public.hourly_call_summary_w_hour_f(timestamp with time zone, timestamp with time zone, integer, integer, character varying, character varying, character varying, integer, integer);
 
 CREATE OR REPLACE FUNCTION public.hourly_call_summary_w_hour_f(
 	from_date timestamp with time zone,
@@ -14,15 +14,16 @@ CREATE OR REPLACE FUNCTION public.hourly_call_summary_w_hour_f(
 	b_unit character varying,
 	company integer,
 	tenant integer)
-    RETURNS TABLE(ivrcount bigint, queuedcount bigint, abandonedcount bigint, abandonedpercent numeric, droppedcount bigint, droppedpercent numeric, holdsec_avg text, ivrconnect_avg text, answersec_avg text, billsec_avg text, answered_count bigint, queuesec_avg text, answeredpercent numeric, abandonedqueue_avg text, answeredqueue_avg text, s_date date, s_hour integer, agentskill character varying, company_id integer, tenant_id integer)
+    RETURNS TABLE(ivrcount bigint, outboundcallcount bigint, queuedcount bigint, abandonedcount bigint, abandonedpercent numeric, droppedcount bigint, droppedpercent numeric, holdsec_avg text, holdsec_avg_outbound text, ivrconnect_avg text, answersec_avg text, billsec_avg text, billsec_avg_outbound text, answered_count bigint, answered_count_outbound bigint, queuesec_avg text, answeredpercent numeric, abandonedqueue_avg text, answeredqueue_avg text, s_date date, s_hour integer, agentskill character varying, company_id integer, tenant_id integer) 
     LANGUAGE 'plpgsql'
 
     COST 100
-    VOLATILE
+    VOLATILE 
     ROWS 1000
 AS $BODY$
  begin if b_unit is null then return query select
 			a.ivrcount,
+			m.outboundcallcount,
 			b.queuedcount,
 			c.abandonedcount,
 			(
@@ -35,6 +36,12 @@ AS $BODY$
 			TO_CHAR(
 				(
 					d.holdsec_avg || ' second'
+				)::interval,
+				'HH24:MI:SS'
+			),
+			TO_CHAR(
+				(
+					n.holdsec_avg_outbound || ' second'
 				)::interval,
 				'HH24:MI:SS'
 			),
@@ -56,7 +63,14 @@ AS $BODY$
 				)::interval,
 				'HH24:MI:SS'
 			),
+			TO_CHAR(
+				(
+					o.billsec_avg_outbound || ' second'
+				)::interval,
+				'HH24:MI:SS'
+			),
 			h.answered_count,
+			p.answered_count_outbound,
 			TO_CHAR(
 				(
 					i.queuesec_avg || ' second'
@@ -171,6 +185,55 @@ AS $BODY$
 				) a on
 				series.s_date = a.c_date
 				and series.s_hour = a.c_hour
+			left outer join (
+					select
+						count(*) as "outboundcallcount",
+						timezone(
+							'Asia/Colombo',
+							"CSDB_CallCDRProcessed"."CreatedTime"
+						)::date as c_date,
+						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer as c_hour,
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+					from
+						"CSDB_CallCDRProcesseds" as "CSDB_CallCDRProcessed"
+					where
+						"CSDB_CallCDRProcessed"."CreatedTime" >= from_date
+						and "CSDB_CallCDRProcessed"."CreatedTime" <= to_date
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer >= from_hour
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer <= to_hour
+						and "CSDB_CallCDRProcessed"."CompanyId" = company
+						and "CSDB_CallCDRProcessed"."TenantId" = tenant
+						and "CSDB_CallCDRProcessed"."DVPCallDirection" = 'outbound'
+						and "CSDB_CallCDRProcessed"."ObjType" = 'GATEWAY'
+					group by
+						c_date,
+						c_hour,
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+				) m on
+				a."CompanyId" = m."CompanyId"
+				and a."TenantId" = m."TenantId"
+				and a.c_date = m.c_date
+				and a.c_hour = m.c_hour
 			left outer join (
 					select
 						count(*) as "queuedcount",
@@ -353,6 +416,57 @@ AS $BODY$
 				and a.c_hour = d.c_hour
 			left outer join (
 					select
+						avg( "HoldSec" ) as "holdsec_avg_outbound",
+						timezone(
+							'Asia/Colombo',
+							"CSDB_CallCDRProcessed"."CreatedTime"
+						)::date as c_date,
+						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer as c_hour,
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+					from
+						"CSDB_CallCDRProcesseds" as "CSDB_CallCDRProcessed"
+					where
+						"CSDB_CallCDRProcessed"."CreatedTime" >= from_date
+												and "CSDB_CallCDRProcessed"."CreatedTime" <= to_date
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer >= from_hour
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer <= to_hour
+						and "CSDB_CallCDRProcessed"."HoldSec" > 0
+						and "CSDB_CallCDRProcessed"."CompanyId" = company
+						and "CSDB_CallCDRProcessed"."TenantId" = tenant
+						and "CSDB_CallCDRProcessed"."DVPCallDirection" = 'outbound'
+						and "CSDB_CallCDRProcessed"."IsAnswered" = true
+						and "CSDB_CallCDRProcessed"."ObjType" = 'GATEWAY'
+					group by
+						c_date,
+						c_hour,
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+				) n on
+				a."CompanyId" = n."CompanyId"
+				and a."TenantId" = n."TenantId"
+				and a.c_date = n.c_date
+				and a.c_hour = n.c_hour
+			left outer join (
+					select
 						avg("IvrConnectSec") as "ivrconnect_avg",
 						timezone(
 							'Asia/Colombo',
@@ -529,6 +643,56 @@ AS $BODY$
 				and a.c_hour = g.c_hour
 			left outer join (
 					select
+						avg("BillSec") as "billsec_avg_outbound",
+						timezone(
+							'Asia/Colombo',
+							"CSDB_CallCDRProcessed"."CreatedTime"
+						)::date as c_date,
+						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer as c_hour,
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+					from
+						"CSDB_CallCDRProcesseds" as "CSDB_CallCDRProcessed"
+					where
+						"CSDB_CallCDRProcessed"."CreatedTime" >= from_date
+												and "CSDB_CallCDRProcessed"."CreatedTime" <= to_date
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer >= from_hour
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer <= to_hour
+						and "CSDB_CallCDRProcessed"."CompanyId" = company
+						and "CSDB_CallCDRProcessed"."TenantId" = tenant
+						and "CSDB_CallCDRProcessed"."DVPCallDirection" = 'outbound'
+						and "CSDB_CallCDRProcessed"."IsAnswered" = true
+						and "CSDB_CallCDRProcessed"."ObjType" = 'GATEWAY'
+					group by
+						c_date,
+						c_hour,
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+				) o on
+				a."CompanyId" = o."CompanyId"
+				and a."TenantId" = o."TenantId"
+				and a.c_date = o.c_date
+				and a.c_hour = o.c_hour
+			left outer join (
+					select
 						count(*) as "answered_count",
 						timezone(
 							'Asia/Colombo',
@@ -586,6 +750,56 @@ AS $BODY$
 				and a."AgentSkill" = h."AgentSkill"
 				and a.c_date = h.c_date
 				and a.c_hour = h.c_hour
+			left outer join (
+					select
+						count(*) as "answered_count_outbound",
+						timezone(
+							'Asia/Colombo',
+							"CSDB_CallCDRProcessed"."CreatedTime"
+						)::date as c_date,
+						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer as c_hour,
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+					from
+						"CSDB_CallCDRProcesseds" as "CSDB_CallCDRProcessed"
+					where
+						"CSDB_CallCDRProcessed"."CreatedTime" >= from_date
+												and "CSDB_CallCDRProcessed"."CreatedTime" <= to_date
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer >= from_hour
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer <= to_hour
+						and "CSDB_CallCDRProcessed"."CompanyId" = company
+						and "CSDB_CallCDRProcessed"."TenantId" = tenant
+						and "CSDB_CallCDRProcessed"."DVPCallDirection" = 'outbound'
+						and "CSDB_CallCDRProcessed"."IsAnswered" = true
+						and "CSDB_CallCDRProcessed"."ObjType" = 'GATEWAY'
+					group by
+						c_date,
+						c_hour,
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+				) p on
+				a."CompanyId" = p."CompanyId"
+				and a."TenantId" = p."TenantId"
+				and a.c_date = p.c_date
+				and a.c_hour = p.c_hour
 			left outer join (
 					select
 						avg("QueueSec") as "queuesec_avg",
@@ -834,6 +1048,7 @@ AS $BODY$
 
 else return query select
 	a.ivrcount,
+	m.outboundcallcount,
 	b.queuedcount,
 	c.abandonedcount,
 	(
@@ -846,6 +1061,12 @@ else return query select
 	TO_CHAR(
 		(
 			d.holdsec_avg || ' second'
+		)::interval,
+		'HH24:MI:SS'
+	),
+	TO_CHAR(
+		(
+			n.holdsec_avg_outbound || ' second'
 		)::interval,
 		'HH24:MI:SS'
 	),
@@ -867,7 +1088,14 @@ else return query select
 		)::interval,
 		'HH24:MI:SS'
 	),
+	TO_CHAR(
+		(
+			o.billsec_avg_outbound || ' second'
+		)::interval,
+		'HH24:MI:SS'
+	),
 	h.answered_count,
+	p.answered_count_outbound,
 	TO_CHAR(
 		(
 			i.queuesec_avg || ' second'
@@ -978,6 +1206,59 @@ from
 		series.s_date = a.c_date
 		and series.s_hour = a.c_hour
 	left outer join (
+					select
+						count(*) as "outboundcallcount",
+						timezone(
+							'Asia/Colombo',
+							"CSDB_CallCDRProcessed"."CreatedTime"
+						)::date as c_date,
+						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer as c_hour,
+						"CSDB_CallCDRProcessed"."BusinessUnit",
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+					from
+						"CSDB_CallCDRProcesseds" as "CSDB_CallCDRProcessed"
+					where
+						"CSDB_CallCDRProcessed"."CreatedTime" >= from_date
+						and "CSDB_CallCDRProcessed"."CreatedTime" <= to_date
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer >= from_hour
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer <= to_hour
+						and "CSDB_CallCDRProcessed"."CompanyId" = company
+						and "CSDB_CallCDRProcessed"."TenantId" = tenant
+						and "CSDB_CallCDRProcessed"."BusinessUnit" = b_unit
+						and "CSDB_CallCDRProcessed"."DVPCallDirection" = 'outbound'
+						and "CSDB_CallCDRProcessed"."ObjType" = 'GATEWAY'
+					group by
+						c_date,
+						c_hour,
+						"CSDB_CallCDRProcessed"."BusinessUnit",
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+				) m on
+				a."BusinessUnit" = m."BusinessUnit"
+				and a."CompanyId" = m."CompanyId"
+				and a."TenantId" = m."TenantId"
+				and a.c_date = m.c_date
+				and a.c_hour = m.c_hour
+		left outer join (
 			select
 				count(*) as "queuedcount",
 				timezone(
@@ -1170,6 +1451,61 @@ from
 		and a.c_date = d.c_date
 		and a.c_hour = d.c_hour
 	left outer join (
+					select
+						avg( "HoldSec" ) as "holdsec_avg_outbound",
+						timezone(
+							'Asia/Colombo',
+							"CSDB_CallCDRProcessed"."CreatedTime"
+						)::date as c_date,
+						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer as c_hour,
+						"CSDB_CallCDRProcessed"."BusinessUnit",
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+					from
+						"CSDB_CallCDRProcesseds" as "CSDB_CallCDRProcessed"
+					where
+						"CSDB_CallCDRProcessed"."CreatedTime" >= from_date
+												and "CSDB_CallCDRProcessed"."CreatedTime" <= to_date
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer >= from_hour
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer <= to_hour
+						and "CSDB_CallCDRProcessed"."HoldSec" > 0
+						and "CSDB_CallCDRProcessed"."BusinessUnit" = b_unit
+						and "CSDB_CallCDRProcessed"."CompanyId" = company
+						and "CSDB_CallCDRProcessed"."TenantId" = tenant
+						and "CSDB_CallCDRProcessed"."DVPCallDirection" = 'outbound'
+						and "CSDB_CallCDRProcessed"."IsAnswered" = true
+						and "CSDB_CallCDRProcessed"."ObjType" = 'GATEWAY'
+					group by
+						c_date,
+						c_hour,
+						"CSDB_CallCDRProcessed"."BusinessUnit",
+						"CSDB_CallCDRProcessed"."CompanyId",
+						"CSDB_CallCDRProcessed"."TenantId"
+				) n on
+				a."BusinessUnit" = n."BusinessUnit"
+				and a."CompanyId" = n."CompanyId"
+				and a."TenantId" = n."TenantId"
+				and a.c_date = n.c_date
+				and a.c_hour = n.c_hour
+		left outer join (
 			select
 				avg("IvrConnectSec") as "ivrconnect_avg",
 				timezone(
@@ -1359,6 +1695,61 @@ from
 		and a.c_hour = g.c_hour
 	left outer join (
 			select
+				avg("BillSec") as "billsec_avg_outbound",
+				timezone(
+					'Asia/Colombo',
+					"CSDB_CallCDRProcessed"."CreatedTime"
+				)::date as c_date,
+				date_part(
+					'hour',
+					timezone(
+						'Asia/Colombo',
+						"CSDB_CallCDRProcessed"."CreatedTime"
+					)
+				)::integer as c_hour,
+				"CSDB_CallCDRProcessed"."BusinessUnit",
+				"CSDB_CallCDRProcessed"."CompanyId",
+				"CSDB_CallCDRProcessed"."TenantId"
+			from
+				"CSDB_CallCDRProcesseds" as "CSDB_CallCDRProcessed"
+			where
+				"CSDB_CallCDRProcessed"."CreatedTime" >= from_date
+										and "CSDB_CallCDRProcessed"."CreatedTime" <= to_date
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer >= from_hour
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer <= to_hour
+				and "CSDB_CallCDRProcessed"."BusinessUnit" = b_unit
+				and "CSDB_CallCDRProcessed"."CompanyId" = company
+				and "CSDB_CallCDRProcessed"."TenantId" = tenant
+				and "CSDB_CallCDRProcessed"."DVPCallDirection" = 'outbound'
+				and "CSDB_CallCDRProcessed"."IsAnswered" = true
+				and "CSDB_CallCDRProcessed"."ObjType" = 'GATEWAY'
+			group by
+				c_date,
+				c_hour,
+				"CSDB_CallCDRProcessed"."BusinessUnit",
+				"CSDB_CallCDRProcessed"."CompanyId",
+				"CSDB_CallCDRProcessed"."TenantId"
+		) o on
+		a."BusinessUnit" = o."BusinessUnit"
+		and a."CompanyId" = o."CompanyId"
+		and a."TenantId" = o."TenantId"
+		and a."AgentSkill" = o."AgentSkill"
+		and a.c_date = o.c_date
+		and a.c_hour = o.c_hour
+	left outer join (
+			select
 				count(*) as "answered_count",
 				timezone(
 					'Asia/Colombo',
@@ -1420,6 +1811,60 @@ from
 		and a."AgentSkill" = h."AgentSkill"
 		and a.c_date = h.c_date
 		and a.c_hour = h.c_hour
+	left outer join (
+			select
+				count(*) as "answered_count_outbound",
+				timezone(
+					'Asia/Colombo',
+					"CSDB_CallCDRProcessed"."CreatedTime"
+				)::date as c_date,
+				date_part(
+					'hour',
+					timezone(
+						'Asia/Colombo',
+						"CSDB_CallCDRProcessed"."CreatedTime"
+					)
+				)::integer as c_hour,
+				"CSDB_CallCDRProcessed"."BusinessUnit",
+				"CSDB_CallCDRProcessed"."CompanyId",
+				"CSDB_CallCDRProcessed"."TenantId"
+			from
+				"CSDB_CallCDRProcesseds" as "CSDB_CallCDRProcessed"
+			where
+				"CSDB_CallCDRProcessed"."CreatedTime" >= from_date
+										and "CSDB_CallCDRProcessed"."CreatedTime" <= to_date
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer >= from_hour
+						and 						date_part(
+							'hour',
+							timezone(
+								'Asia/Colombo',
+								"CSDB_CallCDRProcessed"."CreatedTime"
+							)
+						)::integer <= to_hour
+				and "CSDB_CallCDRProcessed"."BusinessUnit" = b_unit
+				and "CSDB_CallCDRProcessed"."CompanyId" = company
+				and "CSDB_CallCDRProcessed"."TenantId" = tenant
+				and "CSDB_CallCDRProcessed"."DVPCallDirection" = 'outbound'
+				and "CSDB_CallCDRProcessed"."IsAnswered" = true
+				and "CSDB_CallCDRProcessed"."ObjType" = 'GATEWAY'
+			group by
+				c_date,
+				c_hour,
+				"CSDB_CallCDRProcessed"."BusinessUnit",
+				"CSDB_CallCDRProcessed"."CompanyId",
+				"CSDB_CallCDRProcessed"."TenantId"
+		) p on
+		a."BusinessUnit" = p."BusinessUnit"
+		and a."CompanyId" = p."CompanyId"
+		and a."TenantId" = p."TenantId"
+		and a.c_date = p.c_date
+		and a.c_hour = p.c_hour
 	left outer join (
 			select
 				avg("QueueSec") as "queuesec_avg",
@@ -1682,9 +2127,8 @@ order by
 
 end if;
 
-end
+end 
 $BODY$;
 
 ALTER FUNCTION public.hourly_call_summary_w_hour_f(timestamp with time zone, timestamp with time zone, integer, integer, character varying, character varying, character varying, integer, integer)
-    OWNER TO postgres;
-
+    OWNER TO duo;
